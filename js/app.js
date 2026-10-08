@@ -34,20 +34,96 @@ const state = {
   isRunning: false,
   mapInstance: null,
   mapMarker: null,
+  tileLayer: null,
   activeExportTab: 'text',
-  soundEnabled: false
+  soundEnabled: false,
+  currentTheme: 'dark'
 };
 
 // ============================================================================
 // INICIALIZAÇÃO
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   initIcons();
   initClock();
   initEventListeners();
   initMap();
   runAllDiagnostics();
 });
+
+// ============================================================================
+// GERENCIADOR DE TEMAS (LIGHT / DARK NOC DASHBOARD)
+// ============================================================================
+function getInitialTheme() {
+  try {
+    const saved = localStorage.getItem('myip_theme');
+    if (saved === 'light' || saved === 'dark') {
+      return saved;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      return 'light';
+    }
+  } catch (e) {
+    // localStorage indisponível/bloqueado
+  }
+  return 'dark';
+}
+
+function initTheme() {
+  const initial = getInitialTheme();
+  applyTheme(initial, false);
+
+  try {
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        const saved = localStorage.getItem('myip_theme');
+        if (!saved) {
+          applyTheme(e.matches ? 'dark' : 'light', false);
+        }
+      });
+    }
+  } catch (e) {}
+}
+
+function applyTheme(theme, showFeedback = true) {
+  const isDark = theme === 'dark';
+  state.currentTheme = theme;
+  document.documentElement.classList.toggle('dark', isDark);
+
+  try {
+    localStorage.setItem('myip_theme', theme);
+  } catch (e) {}
+
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) {
+    metaTheme.setAttribute('content', isDark ? '#090a0f' : '#f8fafc');
+  }
+
+  const themeBtn = document.getElementById('btn-theme-toggle');
+  const themeIcon = document.getElementById('theme-icon');
+  if (themeIcon) {
+    themeIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+  }
+  if (themeBtn) {
+    themeBtn.setAttribute('title', isDark ? 'Alternar para Modo Claro (Atalho: T)' : 'Alternar para Modo Escuro (Atalho: T)');
+    themeBtn.setAttribute('aria-label', isDark ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro');
+  }
+
+  updateMapTiles(isDark);
+  initIcons();
+
+  if (showFeedback) {
+    playBeep(650, 0.04);
+    showToast(isDark ? 'Modo Escuro ativado' : 'Modo Claro ativado', 'info');
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next, true);
+}
 
 function initIcons() {
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -116,16 +192,31 @@ function initMap() {
       attributionControl: false
     }).setView([0, 0], 2);
 
-    // Camada de Tiles Esri World Dark Gray (Sem marca d'água / Alta fidelidade NOC)
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 16,
-      attribution: 'Tiles &copy; Esri'
-    }).addTo(state.mapInstance);
+    updateMapTiles(document.documentElement.classList.contains('dark'));
 
     L.control.zoom({ position: 'bottomright' }).addTo(state.mapInstance);
   } catch (err) {
     console.warn('Falha ao inicializar o mapa Leaflet:', err);
   }
+}
+
+function updateMapTiles(isDark) {
+  if (!state.mapInstance || typeof L === 'undefined') return;
+
+  if (state.tileLayer) {
+    try {
+      state.mapInstance.removeLayer(state.tileLayer);
+    } catch (e) {}
+  }
+
+  const tileUrl = isDark
+    ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+    : 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+
+  state.tileLayer = L.tileLayer(tileUrl, {
+    maxZoom: 16,
+    attribution: 'Tiles &copy; Esri'
+  }).addTo(state.mapInstance);
 }
 
 function updateMapLocation(lat, lon, label = 'Localização do IP') {
@@ -216,16 +307,25 @@ async function runPingTest() {
 
   if (ticker) ticker.textContent = 'Enviando pacotes...';
 
+  // Reseta estado das barras para inicial
+  if (samplesContainer) {
+    Array.from(samplesContainer.children).forEach((bar) => {
+      bar.textContent = '--';
+      bar.className = 'ping-sample-cell';
+    });
+  }
+
   state.latency = await measurePing(4, (curr, duration, total) => {
     if (ticker) ticker.textContent = `Amostra ${curr}/${total}: ${duration}ms`;
     if (samplesContainer) {
       const bar = samplesContainer.children[curr - 1];
       if (bar) {
         bar.textContent = `${duration}ms`;
-        const color = duration < 35 ? 'text-emerald-300 bg-emerald-950 border-emerald-800' :
-                      duration < 80 ? 'text-cyan-200 bg-cyan-950 border-cyan-800' :
-                      'text-amber-200 bg-amber-950 border-amber-800';
-        bar.className = `rounded flex items-center justify-center text-[10px] font-bold border transition-all ${color}`;
+        let speedClass = 'ping-sample-fast';
+        if (duration >= 150) speedClass = 'ping-sample-slow';
+        else if (duration >= 80) speedClass = 'ping-sample-moderate';
+        else if (duration >= 35) speedClass = 'ping-sample-normal';
+        bar.className = `ping-sample-cell ${speedClass}`;
       }
     }
   });
@@ -426,9 +526,29 @@ function renderLatencyDiagnostics() {
   setText('ping-rating-badge', lat.rating || 'Calculado');
   setText('ping-ticker', lat.avg !== null ? `Média concluída: ${lat.avg}ms` : 'Erro de conexão');
 
+  const colorMap = {
+    emerald: 'text-emerald-600 dark:text-emerald-400',
+    cyan: 'text-cyan-600 dark:text-cyan-400',
+    amber: 'text-amber-600 dark:text-amber-400',
+    rose: 'text-rose-600 dark:text-rose-400'
+  };
+
   const ratingEl = document.getElementById('ping-rating-badge');
   if (ratingEl && lat.ratingColor) {
-    ratingEl.className = `text-[10px] font-bold text-${lat.ratingColor}-400`;
+    const c = colorMap[lat.ratingColor] || 'text-slate-500 dark:text-slate-400';
+    ratingEl.className = `text-[9px] font-mono font-medium block ${c}`;
+  }
+
+  const avgEl = document.getElementById('ping-val-avg');
+  if (avgEl && lat.ratingColor) {
+    const c = colorMap[lat.ratingColor] || 'text-emerald-600 dark:text-emerald-400';
+    avgEl.className = `text-base font-mono font-semibold mt-0.5 block ${c}`;
+  }
+
+  const heroLatEl = document.getElementById('hero-latency-val');
+  if (heroLatEl && lat.ratingColor) {
+    const c = colorMap[lat.ratingColor] || 'text-emerald-600 dark:text-emerald-400';
+    heroLatEl.className = `text-xl font-mono font-semibold ${c}`;
   }
 }
 
@@ -487,6 +607,14 @@ function setReloadState(isLoading) {
 // EVENT LISTENERS & MODAL INTERACTION
 // ============================================================================
 function initEventListeners() {
+  // Alternância de Tema Claro / Escuro
+  const btnThemeToggle = document.getElementById('btn-theme-toggle');
+  if (btnThemeToggle) {
+    btnThemeToggle.addEventListener('click', () => {
+      toggleTheme();
+    });
+  }
+
   // Sound Toggle
   const btnSound = document.getElementById('btn-sound-toggle');
   const soundIcon = document.getElementById('sound-icon');
@@ -494,12 +622,12 @@ function initEventListeners() {
     btnSound.addEventListener('click', () => {
       state.soundEnabled = !state.soundEnabled;
       if (state.soundEnabled) {
-        btnSound.className = 'p-2 rounded-lg bg-cyan-950 border border-cyan-700 text-cyan-300 transition-colors';
+        btnSound.className = 'btn-clean p-1.5 px-2 text-cyan-500 dark:text-cyan-400 border-cyan-500/30';
         soundIcon.setAttribute('data-lucide', 'volume-2');
         playBeep(800, 0.08);
         showToast('Efeitos sonoros NOC ativados', 'info');
       } else {
-        btnSound.className = 'p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-cyan-300 transition-colors';
+        btnSound.className = 'btn-clean p-1.5 px-2';
         soundIcon.setAttribute('data-lucide', 'volume-x');
         showToast('Efeitos sonoros desativados', 'info');
       }
@@ -540,6 +668,7 @@ function initEventListeners() {
   setupCopyButton('btn-hero-copy', () => state.ip?.primaryIp);
   setupCopyButton('btn-copy-ipv4', () => state.ip?.ipv4?.ip);
   setupCopyButton('btn-copy-ipv6', () => state.ip?.ipv6?.ip);
+  setupCopyButton('btn-copy-asn', () => state.geo?.asn);
   setupCopyButton('btn-copy-ua', () => state.ua?.rawUserAgent);
 
   // Modal de Exportação
@@ -619,11 +748,11 @@ function initEventListeners() {
     tabs.forEach((t) => {
       if (!t.btn) return;
       if (t.id === activeId) {
-        t.btn.className = 'px-3.5 py-2 border-b-2 border-cyan-400 text-cyan-300 font-bold transition-colors';
+        t.btn.className = 'px-3.5 py-2 border-b-2 border-blue-600 dark:border-cyan-400 text-blue-600 dark:text-cyan-300 font-bold transition-colors';
         const label = document.getElementById('btn-modal-copy-label');
         if (label) label.textContent = t.label;
       } else {
-        t.btn.className = 'px-3.5 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors';
+        t.btn.className = 'px-3.5 py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors';
       }
     });
 
@@ -679,6 +808,9 @@ function initEventListeners() {
           }
         });
       }
+    } else if (e.key === 't' || e.key === 'T') {
+      e.preventDefault();
+      toggleTheme();
     } else if (e.key === 'e' || e.key === 'E') {
       e.preventDefault();
       if (modalExport) {
@@ -715,9 +847,9 @@ function setupCopyButton(buttonId, getValueFn) {
       const originalHtml = btn.innerHTML;
       const hasText = !!btn.querySelector('span');
       if (hasText) {
-        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i><span class="text-emerald-400">Copiado!</span>`;
+        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i><span class="text-emerald-500">Copiado!</span>`;
       } else {
-        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i>`;
+        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>`;
       }
       initIcons();
 
@@ -739,11 +871,20 @@ function showToast(message, type = 'info') {
   if (!container) return;
 
   const toast = document.createElement('div');
+  const isDark = document.documentElement.classList.contains('dark');
   const typeStyles = {
-    success: 'bg-[#11141c] border-emerald-500/40 text-emerald-300',
-    warning: 'bg-[#11141c] border-amber-500/40 text-amber-300',
-    error: 'bg-[#11141c] border-rose-500/40 text-rose-300',
-    info: 'bg-[#11141c] border-[#2e374d] text-slate-200'
+    success: isDark
+      ? 'bg-[#11141c] border-emerald-500/40 text-emerald-300'
+      : 'bg-white border-emerald-500/50 text-emerald-800 shadow-lg',
+    warning: isDark
+      ? 'bg-[#11141c] border-amber-500/40 text-amber-300'
+      : 'bg-white border-amber-500/50 text-amber-800 shadow-lg',
+    error: isDark
+      ? 'bg-[#11141c] border-rose-500/40 text-rose-300'
+      : 'bg-white border-rose-500/50 text-rose-800 shadow-lg',
+    info: isDark
+      ? 'bg-[#11141c] border-[#2e374d] text-slate-200'
+      : 'bg-white border-slate-300 text-slate-800 shadow-lg'
   };
 
   const icons = {
