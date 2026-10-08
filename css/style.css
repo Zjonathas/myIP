@@ -1,0 +1,315 @@
+/* ==========================================================================
+   myIP — Diagnóstico de Rede & IP Inspector
+   Clean, Modern & Minimalist Dark Design System
+   Inspirado em ferramentas profissionais de infraestrutura (Cloudflare, Vercel, Linear)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ── Design Tokens ──────────────────────────────────────────────────────── */
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Cores de Fundo e Superfície (Matte Escuro Profissional) */
+  --bg-app: #090a0f;
+  --bg-card: #11141c;
+  --bg-card-hover: #141824;
+  --bg-cell: #161a24;
+  --bg-cell-hover: #1a202e;
+  --bg-subtle: #1f2536;
+
+  /* Bordas Refinadas */
+  --border-subtle: #1e2330;
+  --border-card: #1a202c;
+  --border-hover: #2d3748;
+  --border-active: #3b82f6;
+
+  /* Cores Semânticas de Destaque */
+  --accent-blue: #3b82f6;
+  --accent-cyan: #0ea5e9;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #ef4444;
+
+  /* Tipografia */
+  --text-main: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-faint: #475569;
+}
+
+/* ── Base Layer ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-mono-code {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' on, 'zero' on;
+}
+
+/* ── Cards Limpos e Profissionais ───────────────────────────────────────── */
+.app-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.875rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.app-card:hover {
+  border-color: var(--border-hover);
+}
+
+.app-card-hero {
+  background: linear-gradient(180deg, #131722 0%, #0f121a 100%);
+  border: 1px solid #23293a;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+
+.app-cell {
+  background-color: var(--bg-cell);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.625rem;
+  transition: all 0.15s ease;
+}
+
+.app-cell:hover {
+  background-color: var(--bg-cell-hover);
+  border-color: #2b3347;
+}
+
+/* ── Botões Limpos (Estilo Linear / Cloudflare) ─────────────────────────── */
+.btn-clean {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  background-color: var(--bg-cell);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.btn-clean:hover {
+  background-color: var(--bg-cell-hover);
+  border-color: #333d54;
+  color: var(--text-main);
+}
+
+.btn-clean:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  border: 1px solid #3b82f6;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+  border-color: #60a5fa;
+  color: #ffffff;
+}
+
+/* ── Badges Sutis e Discretos ───────────────────────────────────────────── */
+.badge-clean {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.badge-emerald {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.badge-blue {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.badge-amber {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.badge-zinc {
+  background-color: rgba(100, 116, 139, 0.1);
+  color: #94a3b8;
+  border-color: rgba(100, 116, 139, 0.2);
+}
+
+/* ── Pulse Calm (Status Online) ─────────────────────────────────────────── */
+.pulse-calm {
+  position: relative;
+  display: inline-flex;
+}
+
+.pulse-calm::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background-color: #10b981;
+  opacity: 0.4;
+  animation: calmPing 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes calmPing {
+  0% { transform: scale(0.9); opacity: 0.5; }
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ── Skeletons Discretos ─────────────────────────────────────────────────── */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: #1a202c;
+  border-radius: 0.375rem;
+}
+
+.skeleton::after {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.8s infinite;
+  content: '';
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+/* ── Atalhos de Teclado (KBD) ───────────────────────────────────────────── */
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  background-color: #1c2230;
+  color: #94a3b8;
+  border: 1px solid #283247;
+  font-weight: 500;
+}
+
+/* ── Leaflet Dark Map Overrides ─────────────────────────────────────────── */
+.leaflet-container {
+  background: #090a0f !important;
+  font-family: var(--font-sans) !important;
+  border-radius: 0.625rem;
+}
+
+.leaflet-bar a {
+  background-color: #161a24 !important;
+  color: #94a3b8 !important;
+  border-bottom: 1px solid #232838 !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: #1f2536 !important;
+  color: #ffffff !important;
+}
+
+/* ── Toast Notifications (Modern Clean Pill) ────────────────────────────── */
+.toast-enter {
+  animation: toastSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-exit {
+  animation: toastSlideDown 0.2s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastSlideDown {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+}
+
+/* ── Custom Scrollbar — Discreto & Elegante ──────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #23293a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #333d54;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #23293a var(--bg-app);
+}
+
+/* ── Acessibilidade & Focus ─────────────────────────────────────────────── */
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ── Impressão ──────────────────────────────────────────────────────────── */
+@media print {
+  body { background: #fff; color: #000; }
+  .app-card, .app-cell, .app-card-hero {
+    background: #fff !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    color: #000 !important;
+  }
+}

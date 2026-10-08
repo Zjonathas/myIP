@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>myIP — Diagnóstico de Rede & IP Inspector</title>
+  <meta name="description" content="Painel rápido e limpo de telemetria de rede, inspeção de IP público (IPv4/IPv6), BGP ASN, PoP Cloudflare, latência RTT e diagnósticos de conexão.">
+  <meta name="author" content="Zjonathas">
+  <meta name="theme-color" content="#090a0f">
+  <meta name="robots" content="index, follow">
+
+  <!-- Google Site Verification -->
+  <meta name="google-site-verification" content="mghl7hG9vnOgF2yvxwKH4uBso1_BtqROTOXSTlwZVog" />
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://myip.zjonathas.com.br/">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://myip.zjonathas.com.br/">
+  <meta property="og:title" content="myIP — Diagnóstico de Rede & IP Inspector">
+  <meta property="og:description" content="Painel rápido e limpo de telemetria de rede, IP público (IPv4/IPv6), BGP ASN, PoP Cloudflare e latência RTT em tempo real.">
+  <meta property="og:locale" content="pt_BR">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:url" content="https://myip.zjonathas.com.br/">
+  <meta name="twitter:title" content="myIP — Diagnóstico de Rede & IP Inspector">
+  <meta name="twitter:description" content="Painel rápido e limpo de telemetria de rede, IP público (IPv4/IPv6), BGP ASN, PoP Cloudflare e latência RTT em tempo real.">
+
+  <!-- JSON-LD Structured Data for Search Engines -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "myIP",
+    "url": "https://myip.zjonathas.com.br/",
+    "description": "Ferramenta de telemetria de rede, diagnóstico de IP público IPv4/IPv6, BGP ASN, PoP Cloudflare e latência RTT.",
+    "applicationCategory": "NetworkingApplication",
+    "operatingSystem": "All",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "BRL"
+    }
+  }
+  </script>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20'/><path d='M2 12h20'/></svg>">
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+          },
+          colors: {
+            app: {
+              bg: '#090a0f',
+              card: '#11141c',
+              cell: '#161a24',
+              border: '#1e2330',
+              hover: '#283247'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/style.css?v=3.2">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-[#090a0f] text-slate-100 min-h-screen selection:bg-blue-500/20 selection:text-blue-300">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       CABEÇALHO DE NAVEGAÇÃO LIMPO & MINIMALISTA
+       ═══════════════════════════════════════════════════════════════════ -->
+  <header class="sticky top-0 z-40 w-full backdrop-blur-md bg-[#090a0f]/90 border-b border-[#1e2330]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+
+      <!-- Logo e Título -->
+      <div class="flex items-center gap-3">
+        <div
+          class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
+          <i data-lucide="network" class="w-4 h-4"></i>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-semibold tracking-tight text-white">myIP</span>
+          <span class="text-[#2a3449]">/</span>
+          <span class="text-xs text-slate-400 hidden sm:inline">Diagnóstico de Rede</span>
+        </div>
+      </div>
+
+      <!-- Status e Relógio -->
+      <div class="hidden md:flex items-center gap-4 text-xs font-mono text-slate-400">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-calm"></span>
+          <span class="text-emerald-400 font-medium text-[11px]">Online</span>
+        </div>
+        <div class="h-3.5 w-px bg-[#1e2330]"></div>
+        <div class="flex items-center gap-2 text-slate-400 text-[11px]">
+          <span id="clock-local">--:--:--</span>
+          <span class="text-slate-600">•</span>
+          <span id="clock-utc" class="text-slate-500 text-[10px]">--:--:-- UTC</span>
+        </div>
+      </div>
+
+      <!-- Barra de Ações Rápidas -->
+      <div class="flex items-center gap-2">
+        <!-- Áudio -->
+        <button id="btn-sound-toggle" aria-label="Alternar Efeitos Sonoros" title="Alternar Efeitos Sonoros"
+          class="btn-clean p-1.5 px-2">
+          <i data-lucide="volume-x" id="sound-icon" class="w-3.5 h-3.5"></i>
+        </button>
+
+        <!-- Copiar IP -->
+        <button id="btn-quick-copy" aria-label="Copiar IP Público" title="Copiar IP Público (Atalho: C)"
+          class="btn-clean">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span id="btn-quick-copy-text" class="hidden sm:inline">Copiar IP</span>
+          <kbd class="hidden lg:inline ml-1">C</kbd>
+        </button>
+
+        <!-- Recarregar -->
+        <button id="btn-reload" aria-label="Recarregar Diagnóstico" title="Recarregar Testes (Atalho: R)"
+          class="btn-clean">
+          <i data-lucide="refresh-cw" id="reload-icon" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Recarregar</span>
+          <kbd class="hidden lg:inline ml-1">R</kbd>
+        </button>
+
+        <!-- Exportar -->
+        <button id="btn-export-modal" aria-label="Exportar Relatório" title="Exportar Relatório (Atalho: E)"
+          class="btn-clean">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Exportar</span>
+          <kbd class="hidden lg:inline ml-1">E</kbd>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       CONTEÚDO PRINCIPAL
+       ═══════════════════════════════════════════════════════════════════ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+
+    <!-- ═══ CARD PRINCIPAL: IP PÚBLICO & RESUMO DE REDE ═══ -->
+    <section aria-labelledby="hero-title" class="app-card-hero p-5 sm:p-7">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+
+        <!-- Lado Esquerdo: IP Primário & ISP -->
+        <div class="space-y-3">
+          <div class="flex items-center gap-2.5">
+            <span class="badge-clean badge-emerald">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              Conexão Ativa
+            </span>
+            <span id="hero-network-type" class="text-xs text-slate-400">Sondando rede...</span>
+          </div>
+
+          <div>
+            <h2 id="hero-title" class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">
+              Endereço IP Público Primário
+            </h2>
+            <div class="flex items-center gap-3 mt-1">
+              <span id="hero-ip-display"
+                class="text-3xl sm:text-4xl lg:text-5xl font-mono font-semibold tracking-tight text-white select-all">
+                <span class="inline-block w-48 sm:w-64 h-10 skeleton rounded-lg"></span>
+              </span>
+              <button onclick="document.getElementById('btn-quick-copy').click()" aria-label="Copiar IP"
+                title="Copiar IP Principal"
+                class="p-2 rounded-lg bg-[#161a24] hover:bg-[#1e2330] border border-[#232838] text-slate-300 hover:text-white transition-colors">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <p id="hero-isp-summary" class="text-xs sm:text-sm text-slate-300 font-medium">
+            <span class="inline-block w-64 h-4 skeleton rounded"></span>
+          </p>
+        </div>
+
+        <!-- Lado Direito: Métricas Rápidas -->
+        <div class="grid grid-cols-3 gap-2.5 sm:gap-3 lg:w-96">
+          <!-- Latência -->
+          <div class="app-cell p-3">
+            <div class="text-[11px] text-slate-400 flex items-center justify-between">
+              <span>Latência</span>
+              <i data-lucide="activity" class="w-3.5 h-3.5 text-slate-500"></i>
+            </div>
+            <div class="mt-1 flex items-baseline gap-1">
+              <span id="hero-latency-val" class="text-xl font-mono font-semibold text-emerald-400">--</span>
+              <span class="text-[10px] text-slate-500 font-mono">ms</span>
+            </div>
+            <span id="hero-latency-rating" class="text-[10px] text-slate-500 block truncate mt-0.5">Calculando...</span>
+          </div>
+
+          <!-- Cloudflare PoP -->
+          <div class="app-cell p-3">
+            <div class="text-[11px] text-slate-400 flex items-center justify-between">
+              <span>Borda PoP</span>
+              <i data-lucide="server" class="w-3.5 h-3.5 text-slate-500"></i>
+            </div>
+            <div class="mt-1">
+              <span id="hero-pop-code" class="text-xl font-mono font-semibold text-blue-400">--</span>
+            </div>
+            <span id="hero-pop-name" class="text-[10px] text-slate-500 block truncate mt-0.5">Cloudflare</span>
+          </div>
+
+          <!-- Protocolo -->
+          <div class="app-cell p-3">
+            <div class="text-[11px] text-slate-400 flex items-center justify-between">
+              <span>Protocolo</span>
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-slate-500"></i>
+            </div>
+            <div class="mt-1">
+              <span id="hero-protocol-val" class="text-xl font-mono font-semibold text-slate-200">--</span>
+            </div>
+            <span id="hero-tls-val" class="text-[10px] text-slate-500 block truncate mt-0.5">TLS --</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══ ALERTA DE FALLBACK (QUANDO APLICÁVEL) ═══ -->
+    <div id="fallback-alert"
+      class="hidden p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs flex items-center gap-3">
+      <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0"></i>
+      <span id="fallback-alert-msg" class="leading-relaxed">Fallback ativado em provedor secundário de
+        geolocalização.</span>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         GRID DE MÓDULOS DE DIAGNÓSTICO
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+      <!-- ── CARD 1: ENDEREÇAMENTO IP ─────────────────────────────────── -->
+      <section class="app-card p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-[#1e2330] pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="globe" class="w-4 h-4 text-blue-400"></i>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-300">Endereçamento IP Público</h3>
+          </div>
+          <span class="badge-clean badge-zinc">Dual-Stack</span>
+        </div>
+
+        <div class="space-y-3">
+          <!-- IPv4 -->
+          <div class="app-cell p-3 flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <span class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider block">IPv4 Público</span>
+              <span id="val-ipv4" class="text-sm sm:text-base font-mono font-medium text-white block">
+                <span class="inline-block w-36 h-4 skeleton rounded"></span>
+              </span>
+              <span id="src-ipv4" class="text-[11px] text-slate-500 font-mono">Sondando rotas...</span>
+            </div>
+            <button id="btn-copy-ipv4" aria-label="Copiar IPv4" title="Copiar IPv4"
+              class="p-2 rounded-md bg-[#11141c] hover:bg-[#1a202c] border border-[#1e2330] text-slate-400 hover:text-white transition-colors">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <!-- IPv6 -->
+          <div class="app-cell p-3 flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-1.5">
+                <span id="dot-ipv6" class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                <span class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">IPv6 Público</span>
+              </div>
+              <span id="val-ipv6" class="text-xs sm:text-sm font-mono font-medium text-slate-300 block break-all">
+                <span class="inline-block w-48 h-4 skeleton rounded"></span>
+              </span>
+              <span id="src-ipv6" class="text-[11px] text-slate-500 font-mono">Verificando suporte IPv6...</span>
+            </div>
+            <button id="btn-copy-ipv6" disabled aria-label="Copiar IPv6" title="Copiar IPv6"
+              class="p-2 rounded-md bg-[#11141c] hover:bg-[#1a202c] border border-[#1e2330] text-slate-400 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── CARD 2: TELEMETRIA DE BORDA (CLOUDFLARE) ────────────────── -->
+      <section class="app-card p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-[#1e2330] pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-300">Telemetria de Borda Cloudflare
+            </h3>
+          </div>
+          <span id="edge-endpoint-badge" class="badge-clean badge-zinc font-mono text-[10px]">zjonathas.com.br</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Protocolo HTTP -->
+          <div class="app-cell p-3">
+            <span class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider block">Protocolo HTTP</span>
+            <div class="flex items-center gap-2 mt-1">
+              <span id="val-http-protocol" class="text-sm font-mono font-semibold text-white">--</span>
+              <span class="badge-clean badge-blue text-[9px]">Multiplexado</span>
+            </div>
+          </div>
+
+          <!-- Versão TLS -->
+          <div class="app-cell p-3">
+            <span class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider block">Criptografia
+              TLS</span>
+            <div class="flex items-center gap-2 mt-1">
+              <span id="val-tls-version" class="text-sm font-mono font-semibold text-emerald-400">--</span>
+              <span class="badge-clean badge-emerald text-[9px]">Seguro</span>
+            </div>
+          </div>
+
+          <!-- Ponto de Presença -->
+          <div class="app-cell p-3 col-span-2">
+            <span class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider block">Datacenter Cloudflare
+              (PoP)</span>
+            <div class="flex items-center justify-between mt-1">
+              <span id="val-colo-formatted" class="text-sm font-medium text-slate-200">Identificando
+                Datacenter...</span>
+              <span id="val-colo-code"
+                class="text-xs font-mono font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">--</span>
+            </div>
+          </div>
+
+          <!-- SNI -->
+          <div class="app-cell p-2.5">
+            <span class="text-[10px] text-slate-500 uppercase font-mono block">SNI</span>
+            <span id="val-sni" class="text-xs font-mono text-slate-300 mt-0.5 block truncate">--</span>
+          </div>
+
+          <!-- Troca de Chaves -->
+          <div class="app-cell p-2.5">
+            <span class="text-[10px] text-slate-500 uppercase font-mono block">Troca de Chaves (KEX)</span>
+            <span id="val-kex" class="text-xs font-mono text-slate-300 mt-0.5 block truncate">--</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── CARD 3: ROTEAMENTO & PROVEDOR (ASN) ──────────────────────── -->
+      <section class="app-card p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-[#1e2330] pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="git-branch" class="w-4 h-4 text-blue-400"></i>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-300">Roteamento & Provedor (ASN)</h3>
+          </div>
+          <span id="geo-source-badge" class="badge-clean badge-zinc text-[10px]">Provedor</span>
+        </div>
+
+        <div class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="app-cell p-3">
+              <span class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider block">ISP /
+                Operadora</span>
+              <span id="val-isp" class="text-xs sm:text-sm font-medium text-white mt-1 block truncate">
+                <span class="inline-block w-36 h-4 skeleton rounded"></span>
+              </span>
+            </div>
+
+            <div class="app-cell p-3">
+              <span class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider block">Sistema Autônomo
+                (ASN)</span>
+              <span id="val-asn" class="text-xs sm:text-sm font-mono font-semibold text-blue-400 mt-1 block">
+                <span class="inline-block w-24 h-4 skeleton rounded"></span>
+              </span>
+            </div>
+          </div>
+
+          <div class="app-cell p-3">
+            <span class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider block">Organização
+              Responsável (BGP)</span>
+            <span id="val-org" class="text-xs sm:text-sm font-medium text-slate-300 mt-1 block">
+              <span class="inline-block w-48 h-4 skeleton rounded"></span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── CARD 4: MÉTRICAS DE LATÊNCIA (RTT) ───────────────────────── -->
+      <section class="app-card p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-[#1e2330] pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="gauge" class="w-4 h-4 text-emerald-400"></i>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-300">Latência & Conexão (RTT)</h3>
+          </div>
+          <button id="btn-retest-ping" class="btn-clean py-1 px-2.5 text-xs text-blue-400 hover:text-blue-300">
+            <i data-lucide="play" class="w-3 h-3"></i>
+            <span>Testar Novamente</span>
+          </button>
+        </div>
+
+        <!-- 4 Estatísticas de Ping -->
+        <div class="grid grid-cols-4 gap-2">
+          <div class="app-cell p-2.5 text-center">
+            <span class="text-[10px] uppercase text-slate-400 block">Médio</span>
+            <span id="ping-val-avg" class="text-base font-mono font-semibold text-emerald-400 mt-0.5 block">--</span>
+            <span id="ping-rating-badge" class="text-[9px] text-slate-500 font-mono block">--</span>
+          </div>
+          <div class="app-cell p-2.5 text-center">
+            <span class="text-[10px] uppercase text-slate-400 block">Mínimo</span>
+            <span id="ping-val-min" class="text-base font-mono font-medium text-slate-200 mt-0.5 block">--</span>
+            <span class="text-[9px] text-slate-500 font-mono block">ms</span>
+          </div>
+          <div class="app-cell p-2.5 text-center">
+            <span class="text-[10px] uppercase text-slate-400 block">Máximo</span>
+            <span id="ping-val-max" class="text-base font-mono font-medium text-slate-200 mt-0.5 block">--</span>
+            <span class="text-[9px] text-slate-500 font-mono block">ms</span>
+          </div>
+          <div class="app-cell p-2.5 text-center">
+            <span class="text-[10px] uppercase text-slate-400 block">Jitter</span>
+            <span id="ping-val-jitter" class="text-base font-mono font-semibold text-blue-400 mt-0.5 block">--</span>
+            <span class="text-[9px] text-slate-500 font-mono block">ms</span>
+          </div>
+        </div>
+
+        <!-- Barra de Amostras -->
+        <div class="space-y-1.5 font-mono text-xs">
+          <div class="flex justify-between text-[11px] text-slate-400">
+            <span>Amostras Disparadas (4 requisições)</span>
+            <span id="ping-ticker" class="text-slate-300 font-medium">Aguardando...</span>
+          </div>
+          <div id="ping-samples-container" class="grid grid-cols-4 gap-1.5 h-6">
+            <div
+              class="bg-[#161a24] rounded flex items-center justify-center text-[10px] text-slate-400 border border-[#1e2330]">
+              --</div>
+            <div
+              class="bg-[#161a24] rounded flex items-center justify-center text-[10px] text-slate-400 border border-[#1e2330]">
+              --</div>
+            <div
+              class="bg-[#161a24] rounded flex items-center justify-center text-[10px] text-slate-400 border border-[#1e2330]">
+              --</div>
+            <div
+              class="bg-[#161a24] rounded flex items-center justify-center text-[10px] text-slate-400 border border-[#1e2330]">
+              --</div>
+          </div>
+        </div>
+
+        <!-- Info API Network -->
+        <div class="grid grid-cols-3 gap-2 text-xs pt-1">
+          <div class="app-cell p-2">
+            <span class="text-[10px] text-slate-500 block">Tipo Efetivo</span>
+            <span id="net-effective-type" class="font-mono font-medium text-slate-300 mt-0.5 block">--</span>
+          </div>
+          <div class="app-cell p-2">
+            <span class="text-[10px] text-slate-500 block">Downlink Estimado</span>
+            <span id="net-downlink" class="font-mono font-medium text-blue-400 mt-0.5 block">--</span>
+          </div>
+          <div class="app-cell p-2">
+            <span class="text-[10px] text-slate-500 block">RTT Interface</span>
+            <span id="net-rtt" class="font-mono font-medium text-slate-300 mt-0.5 block">--</span>
+          </div>
+        </div>
+        <p id="net-unsupported-note" class="text-[10px] text-slate-500 italic hidden">Network Information API não
+          suportada neste navegador.</p>
+      </section>
+
+      <!-- ── CARD 5: GEOLOCALIZAÇÃO & MAPA ────────────────────────────── -->
+      <section class="app-card p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-[#1e2330] pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-300">Geolocalização & Coordenadas</h3>
+          </div>
+          <a id="link-external-maps" href="#" target="_blank" rel="noopener noreferrer"
+            class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
+            <span>Abrir no Mapa</span>
+            <i data-lucide="external-link" class="w-3 h-3"></i>
+          </a>
+        </div>
+
+        <!-- Dados de Localidade -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div class="app-cell p-2.5">
+            <span class="text-[10px] uppercase text-slate-400 block">Cidade</span>
+            <span id="val-city" class="text-xs font-medium text-white mt-0.5 block truncate">--</span>
+          </div>
+          <div class="app-cell p-2.5">
+            <span class="text-[10px] uppercase text-slate-400 block">Estado / Região</span>
+            <span id="val-region" class="text-xs font-medium text-white mt-0.5 block truncate">--</span>
+          </div>
+          <div class="app-cell p-2.5">
+            <span class="text-[10px] uppercase text-slate-400 block">País</span>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <img id="val-country-flag" class="w-4 h-3 rounded-sm object-cover hidden" alt="Bandeira">
+              <span id="val-country" class="text-xs font-medium text-white truncate">--</span>
+            </div>
+          </div>
+          <div class="app-cell p-2.5">
+            <span class="text-[10px] uppercase text-slate-400 block">Fuso Horário</span>
+            <span id="val-timezone" class="text-xs font-mono text-slate-300 mt-0.5 block truncate">--</span>
+          </div>
+        </div>
+
+        <!-- Container do Mapa Leaflet -->
+        <div class="relative w-full h-56 rounded-lg overflow-hidden border border-[#1e2330] bg-[#090a0f]">
+          <div id="map-container" class="w-full h-full z-10" aria-label="Mapa de geolocalização"></div>
+
+          <!-- Coordenadas Flutuantes -->
+          <div
+            class="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-2 bg-[#090a0f]/90 backdrop-blur-md px-2.5 py-1 rounded-md border border-[#1e2330] text-[11px] font-mono text-slate-300">
+            <span id="val-coordinates">Carregando coordenadas...</span>
+            <button id="btn-copy-coords" aria-label="Copiar Coordenadas" title="Copiar Coordenadas"
+              class="text-slate-400 hover:text-white transition-colors">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── CARD 6: DISPOSITIVO & SISTEMA ───────────────────────────── -->
+      <section class="app-card p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-[#1e2330] pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="cpu" class="w-4 h-4 text-purple-400"></i>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-300">Dispositivo & Sistema</h3>
+          </div>
+          <span class="text-[10px] text-slate-500 font-mono">Client Specs</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Tela -->
+          <div class="app-cell p-3 space-y-1">
+            <div class="flex items-center gap-1.5 text-slate-400 text-[11px]">
+              <i data-lucide="monitor" class="w-3.5 h-3.5"></i>
+              <span class="font-medium uppercase">Tela & Viewport</span>
+            </div>
+            <div class="flex justify-between text-xs pt-1">
+              <span class="text-slate-500">Monitor:</span>
+              <span id="disp-screen" class="font-mono text-slate-300">--</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-500">Viewport:</span>
+              <span id="disp-viewport" class="font-mono text-slate-300">--</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-500">DPR:</span>
+              <span id="disp-dpr" class="font-mono text-blue-400">--</span>
+            </div>
+          </div>
+
+          <!-- WebRTC Leak Test -->
+          <div class="app-cell p-3 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 text-slate-400 text-[11px]">
+                <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                <span class="font-medium uppercase">WebRTC Leak Test</span>
+              </div>
+              <span id="webrtc-badge" class="badge-clean badge-emerald text-[9px]">Protegido</span>
+            </div>
+            <p id="webrtc-status-text" class="text-xs text-slate-300 leading-snug">
+              Sem vazamento de IP local detectado via mDNS.
+            </p>
+            <div id="webrtc-leaked-box"
+              class="hidden p-2 rounded bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[10px] font-mono">
+              IPs: <span id="webrtc-leaked-list"></span>
+            </div>
+          </div>
+
+          <!-- GPU -->
+          <div class="app-cell p-3 col-span-1 sm:col-span-2 space-y-1">
+            <div class="flex items-center gap-1.5 text-slate-400 text-[11px]">
+              <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+              <span class="font-medium uppercase">GPU / Renderizador WebGL</span>
+            </div>
+            <p id="gpu-renderer" class="text-xs font-mono text-slate-300 truncate pt-1">Carregando...</p>
+            <div class="flex justify-between text-[11px] text-slate-500">
+              <span id="gpu-vendor">Vendor: --</span>
+              <span id="gpu-webgl-ver">WebGL: --</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- User-Agent Accordion -->
+        <div class="border-t border-[#1e2330] pt-2">
+          <button id="btn-toggle-ua"
+            class="w-full flex items-center justify-between py-2 text-xs text-slate-400 hover:text-slate-200 transition-colors">
+            <div class="flex items-center gap-2">
+              <i data-lucide="terminal" class="w-3.5 h-3.5"></i>
+              <span>Inspecionar User-Agent Bruto</span>
+            </div>
+            <i data-lucide="chevron-down" id="ua-chevron" class="w-4 h-4 transition-transform duration-200"></i>
+          </button>
+          <div id="ua-accordion-content"
+            class="hidden mt-2 p-3 rounded-lg bg-[#090a0f] border border-[#1e2330] space-y-2">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pb-2 border-b border-[#1e2330]">
+              <div><span class="text-slate-500 block">SO:</span> <span id="ua-os"
+                  class="text-slate-300 font-mono">--</span></div>
+              <div><span class="text-slate-500 block">Arquitetura:</span> <span id="ua-arch"
+                  class="text-slate-300 font-mono">--</span></div>
+              <div><span class="text-slate-500 block">Navegador:</span> <span id="ua-browser"
+                  class="text-slate-300 font-mono">--</span></div>
+              <div><span class="text-slate-500 block">CPU Cores:</span> <span id="ua-cores"
+                  class="text-slate-300 font-mono">--</span></div>
+            </div>
+            <div class="relative">
+              <pre id="raw-user-agent"
+                class="text-[10px] font-mono text-slate-400 whitespace-pre-wrap break-all p-2 bg-[#11141c] rounded"></pre>
+              <button id="btn-copy-ua"
+                class="absolute top-2 right-2 p-1.5 rounded bg-[#161a24] hover:bg-[#1e2330] text-slate-400 hover:text-white text-[10px] flex items-center gap-1 border border-[#1e2330]">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span>Copiar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         RODAPÉ LIMPO
+         ═══════════════════════════════════════════════════════════════════ -->
+    <footer
+      class="pt-6 pb-8 border-t border-[#1e2330] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+      <div class="flex items-center gap-2">
+        <span class="font-medium text-slate-400">myIP</span>
+        <span>•</span>
+        <span>100% Client-Side</span>
+        <span>•</span>
+        <span>Zjonathas</span>
+      </div>
+
+      <div class="flex items-center gap-4 text-[11px]">
+        <span>Atalhos:</span>
+        <span class="flex items-center gap-1"><kbd>R</kbd> Recarregar</span>
+        <span class="flex items-center gap-1"><kbd>C</kbd> Copiar IP</span>
+        <span class="flex items-center gap-1"><kbd>E</kbd> Exportar</span>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       MODAL DE EXPORTAÇÃO
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div id="modal-export" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"></div>
+
+    <div
+      class="relative z-10 w-full max-w-2xl bg-[#11141c] border border-[#1e2330] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <!-- Cabeçalho do Modal -->
+      <div class="px-5 py-4 border-b border-[#1e2330] flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="file-text" class="w-4 h-4 text-blue-400"></i>
+          <h3 class="text-sm font-semibold text-white">Exportar Relatório Técnico</h3>
+        </div>
+        <button id="btn-close-modal" aria-label="Fechar Modal"
+          class="p-1 rounded-md text-slate-400 hover:text-white hover:bg-[#161a24] transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Abas de Formato -->
+      <div class="px-5 pt-3 border-b border-[#1e2330] flex gap-2">
+        <button id="tab-btn-text"
+          class="px-3 py-1.5 text-xs font-medium rounded-t-md text-white border-b-2 border-blue-500 bg-[#161a24]">Texto
+          Puro</button>
+        <button id="tab-btn-markdown"
+          class="px-3 py-1.5 text-xs font-medium rounded-t-md text-slate-400 hover:text-slate-200">Markdown</button>
+        <button id="tab-btn-json"
+          class="px-3 py-1.5 text-xs font-medium rounded-t-md text-slate-400 hover:text-slate-200">JSON</button>
+      </div>
+
+      <!-- Preview do Conteúdo -->
+      <div class="p-5 flex-1 overflow-auto">
+        <textarea id="export-preview-area" readonly
+          class="w-full h-72 p-3 rounded-lg bg-[#090a0f] border border-[#1e2330] font-mono text-xs text-slate-300 resize-none focus:outline-none"></textarea>
+      </div>
+
+      <!-- Rodapé do Modal -->
+      <div class="px-5 py-3.5 border-t border-[#1e2330] bg-[#0d1017] flex items-center justify-between gap-3">
+        <span class="text-[11px] text-slate-500">Pressione <kbd>ESC</kbd> para fechar</span>
+        <div class="flex items-center gap-2">
+          <button id="btn-modal-copy" class="btn-clean">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span id="btn-modal-copy-label">Copiar Relatório</span>
+          </button>
+          <button id="btn-modal-download" class="btn-clean btn-primary">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Baixar Arquivo</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       TOAST CONTAINER
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Application Main Script (ES Modules) -->
+  <script type="module" src="js/app.js?v=3.2"></script>
+</body>
+
+</html>
