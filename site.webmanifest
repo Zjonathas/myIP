@@ -1,0 +1,23 @@
+{
+  "name": "myIP Address — Diagnóstico de Rede & IP Inspector",
+  "short_name": "myIP Address",
+  "description": "Painel rápido e limpo de telemetria de rede, inspeção de IP público (IPv4/IPv6), BGP ASN, PoP Cloudflare, latência RTT e diagnósticos de conexão.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090a0f",
+  "theme_color": "#090a0f",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

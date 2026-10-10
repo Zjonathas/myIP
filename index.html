@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>myIP — Diagnóstico de Rede & IP Inspector</title>
-  <meta name="description" content="Painel rápido e limpo de telemetria de rede, inspeção de IP público (IPv4/IPv6), BGP ASN, PoP Cloudflare, latência RTT e diagnósticos de conexão.">
+  <title>myIP Address — Diagnóstico de Rede &amp; IP Inspector</title>
+  <meta name="description" content="Painel rápido e limpo de telemetria de rede. Descubra seu endereço IP público (My IP Address / IPv4 e IPv6), BGP ASN, provedor ISP, PoP Cloudflare, latência RTT e diagnósticos de conexão.">
   <meta name="author" content="Zjonathas">
   <meta name="theme-color" content="#090a0f">
   <meta name="robots" content="index, follow">
@@ -19,26 +19,37 @@
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://myip.zjonathas.com.br/">
-  <meta property="og:title" content="myIP — Diagnóstico de Rede & IP Inspector">
-  <meta property="og:description" content="Painel rápido e limpo de telemetria de rede, IP público (IPv4/IPv6), BGP ASN, PoP Cloudflare e latência RTT em tempo real.">
+  <meta property="og:title" content="myIP Address — Diagnóstico de Rede &amp; IP Inspector">
+  <meta property="og:description" content="Painel rápido e limpo de telemetria de rede. Descubra seu endereço IP público (My IP Address / IPv4 e IPv6), BGP ASN, PoP Cloudflare e latência RTT em tempo real.">
+  <meta property="og:image" content="https://myip.zjonathas.com.br/favicon-512x512.png">
   <meta property="og:locale" content="pt_BR">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary">
   <meta name="twitter:url" content="https://myip.zjonathas.com.br/">
-  <meta name="twitter:title" content="myIP — Diagnóstico de Rede & IP Inspector">
-  <meta name="twitter:description" content="Painel rápido e limpo de telemetria de rede, IP público (IPv4/IPv6), BGP ASN, PoP Cloudflare e latência RTT em tempo real.">
+  <meta name="twitter:title" content="myIP Address — Diagnóstico de Rede &amp; IP Inspector">
+  <meta name="twitter:description" content="Painel rápido e limpo de telemetria de rede. Descubra seu endereço IP público (My IP Address / IPv4 e IPv6), BGP ASN, PoP Cloudflare e latência RTT em tempo real.">
+  <meta name="twitter:image" content="https://myip.zjonathas.com.br/favicon-512x512.png">
 
   <!-- JSON-LD Structured Data for Search Engines -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "myIP",
+    "name": "myIP Address",
+    "alternateName": [
+      "myIP",
+      "My IP Address",
+      "myip address",
+      "myip addres",
+      "Qual é meu IP",
+      "Meu IP"
+    ],
     "url": "https://myip.zjonathas.com.br/",
-    "description": "Ferramenta de telemetria de rede, diagnóstico de IP público IPv4/IPv6, BGP ASN, PoP Cloudflare e latência RTT.",
+    "description": "Ferramenta de telemetria de rede, diagnóstico de endereço IP público (My IP Address) IPv4/IPv6, BGP ASN, PoP Cloudflare e latência RTT.",
     "applicationCategory": "NetworkingApplication",
     "operatingSystem": "All",
+    "image": "https://myip.zjonathas.com.br/favicon-512x512.png",
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -47,9 +58,13 @@
   }
   </script>
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20'/><path d='M2 12h20'/></svg>">
+  <!-- Favicon & Search Engine Icons (Googlebot-Image & Browser Compliant) -->
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
 
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,11 +138,11 @@
           class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500 dark:text-blue-400">
           <i data-lucide="network" class="w-4 h-4"></i>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="text-sm font-semibold tracking-tight text-slate-900 dark:text-white">myIP</span>
-          <span class="text-slate-300 dark:text-[#2a3449]">/</span>
-          <span class="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">Diagnóstico de Rede</span>
-        </div>
+        <h1 class="flex items-center gap-2 m-0 p-0 text-sm font-semibold tracking-tight text-slate-900 dark:text-white font-sans">
+          <span>myIP Address</span>
+          <span class="text-slate-300 dark:text-[#2a3449] font-normal">/</span>
+          <span class="text-xs font-normal text-slate-500 dark:text-slate-400 hidden sm:inline">Diagnóstico de Rede</span>
+        </h1>
       </div>
 
       <!-- Status e Relógio -->
@@ -661,7 +676,7 @@
     <footer
       class="pt-6 pb-8 border-t border-slate-200 dark:border-[#1e2330] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
       <div class="flex items-center gap-2">
-        <span class="font-medium text-slate-700 dark:text-slate-400">myIP</span>
+        <span class="font-medium text-slate-700 dark:text-slate-400">myIP Address</span>
         <span>•</span>
         <span>100% Client-Side</span>
         <span>•</span>
