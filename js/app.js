@@ -19,6 +19,12 @@ import {
   copyToClipboard,
   downloadFile
 } from './modules/exportManager.js';
+import {
+  testTcpPort,
+  COMMON_PORTS,
+  validatePort,
+  validateHost
+} from './modules/portTester.js';
 
 // Estado global da aplicação
 const state = {
@@ -31,6 +37,8 @@ const state = {
   ua: null,
   gpu: null,
   webrtc: null,
+  portTest: null,
+  isTestingPort: false,
   isRunning: false,
   mapInstance: null,
   mapMarker: null,
@@ -48,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initIcons();
   initClock();
   initEventListeners();
+  initPortTester();
   initMap();
   runAllDiagnostics();
 });
@@ -401,6 +410,12 @@ function renderIpDiagnostics() {
   }
   if (srcIpv4) {
     srcIpv4.textContent = ipv4.source ? `Origem: ${ipv4.source}` : (ipv4.error || 'Indisponível');
+  }
+
+  // Preencher campo de IP do teste de portas se estiver vazio
+  const portInputHost = document.getElementById('port-input-host');
+  if (portInputHost && !portInputHost.value && ip.primaryIp && ip.primaryIp !== 'Desconhecido') {
+    portInputHost.value = ip.primaryIp;
   }
 
   // IPv6 Card
@@ -862,6 +877,237 @@ function setupCopyButton(buttonId, getValueFn) {
     }
   });
 }
+
+// ============================================================================
+// TESTE DE PORTAS & ENCAMINHAMENTO (PORT FORWARDING CHECKER)
+// ============================================================================
+function initPortTester() {
+  const presetsContainer = document.getElementById('port-presets-container');
+  const portInputPort = document.getElementById('port-input-port');
+  const portInputHost = document.getElementById('port-input-host');
+  const btnRun = document.getElementById('btn-run-port-test');
+  const btnUseMyIp = document.getElementById('btn-use-my-ip');
+
+  // Renderizar botões de atalho rápido para portas
+  if (presetsContainer) {
+    presetsContainer.innerHTML = COMMON_PORTS.map((p) => `
+      <button type="button" data-port="${p.port}" title="${p.name}: ${p.desc}"
+        class="port-preset-btn px-2.5 py-1 rounded-md bg-[#161a24] hover:bg-[#1f2536] border border-[#1e2330] hover:border-blue-500/50 text-[11px] font-mono text-slate-300 transition-all flex items-center gap-1.5 focus:outline-none focus:border-blue-500">
+        <span class="font-semibold text-blue-400">${p.port}</span>
+        <span class="text-slate-400">${p.name}</span>
+      </button>
+    `).join('');
+
+    presetsContainer.querySelectorAll('.port-preset-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const port = btn.getAttribute('data-port');
+        if (portInputPort) {
+          portInputPort.value = port;
+          portInputPort.focus();
+        }
+      });
+    });
+  }
+
+  // Ação: Inserir IP atual
+  if (btnUseMyIp) {
+    btnUseMyIp.addEventListener('click', () => {
+      if (portInputHost) {
+        if (state.ip?.primaryIp && state.ip.primaryIp !== 'Desconhecido') {
+          portInputHost.value = state.ip.primaryIp;
+          showToast(`IP atual inserido: ${state.ip.primaryIp}`, 'info');
+        } else {
+          showToast('IP público ainda não detectado.', 'warning');
+        }
+      }
+    });
+  }
+
+  // Ação: Disparar teste
+  const triggerTest = () => {
+    const host = (portInputHost?.value || state.ip?.primaryIp || '').trim();
+    const port = (portInputPort?.value || '').trim();
+    runPortCheck(host, port);
+  };
+
+  if (btnRun) {
+    btnRun.addEventListener('click', triggerTest);
+  }
+
+  [portInputHost, portInputPort].forEach((input) => {
+    if (input) {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          triggerTest();
+        }
+      });
+    }
+  });
+}
+
+async function runPortCheck(host, port) {
+  if (state.isTestingPort) return;
+
+  const hostVal = validateHost(host);
+  if (!hostVal.valid) {
+    showToast(hostVal.error, 'warning');
+    const portInputHost = document.getElementById('port-input-host');
+    if (portInputHost) portInputHost.focus();
+    return;
+  }
+
+  const portVal = validatePort(port);
+  if (!portVal.valid) {
+    showToast(portVal.error, 'warning');
+    const portInputPort = document.getElementById('port-input-port');
+    if (portInputPort) portInputPort.focus();
+    return;
+  }
+
+  const targetHost = hostVal.hostClean;
+  const targetPort = portVal.portNumber;
+
+  // Estado de carregamento
+  state.isTestingPort = true;
+  playBeep(640, 0.05);
+
+  const btnRun = document.getElementById('btn-run-port-test');
+  const btnLabel = document.getElementById('port-btn-label');
+  const btnIcon = document.getElementById('port-btn-icon');
+  const statusBadge = document.getElementById('port-status-badge');
+  const resultCard = document.getElementById('port-result-card');
+  const resultTitle = document.getElementById('port-result-title');
+  const resultMsg = document.getElementById('port-result-message');
+  const resultMetrics = document.getElementById('port-result-metrics');
+  const iconContainer = document.getElementById('port-result-icon-container');
+  const guide = document.getElementById('port-troubleshoot-guide');
+
+  if (btnRun) {
+    btnRun.disabled = true;
+    btnRun.innerHTML = `
+      <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+      <span>Sondando...</span>
+    `;
+  }
+
+  if (statusBadge) {
+    statusBadge.className = 'badge-clean badge-blue text-[10px]';
+    statusBadge.textContent = 'Sondando TCP...';
+  }
+
+  if (resultCard) {
+    resultCard.classList.remove('hidden');
+    resultCard.className = 'rounded-lg p-4 border transition-all bg-[#11141c] border-[#1e2330]';
+  }
+  if (iconContainer) {
+    iconContainer.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 text-blue-400 animate-spin"></i>';
+  }
+  if (resultTitle) {
+    resultTitle.textContent = `Sondando ${targetHost}:${targetPort}...`;
+    resultTitle.className = 'text-sm font-semibold text-white';
+  }
+  if (resultMsg) resultMsg.textContent = 'Enviando pacote TCP SYN a partir de sonda externa na internet...';
+  if (resultMetrics) resultMetrics.innerHTML = '<span class="text-slate-500 font-mono text-[11px]">Aguardando handshake...</span>';
+  if (guide) guide.classList.add('hidden');
+  initIcons();
+
+  try {
+    const result = await testTcpPort(targetHost, targetPort);
+    state.portTest = result;
+
+    if (result.success && result.status === 'open') {
+      // Porta Aberta
+      playBeep(880, 0.08);
+      if (statusBadge) {
+        statusBadge.className = 'badge-clean badge-emerald text-[10px]';
+        statusBadge.textContent = 'Aberta';
+      }
+      if (resultCard) {
+        resultCard.className = 'rounded-lg p-4 border transition-all bg-emerald-950/20 border-emerald-500/30';
+      }
+      if (iconContainer) {
+        iconContainer.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>';
+      }
+      if (resultTitle) {
+        resultTitle.textContent = `Porta ${result.port} está ABERTA`;
+        resultTitle.className = 'text-sm font-semibold text-emerald-300';
+      }
+      if (resultMsg) {
+        resultMsg.textContent = `Conexão TCP estabelecida com sucesso com ${result.ip}. O serviço respondeu e o redirecionamento está ativo!`;
+      }
+      if (resultMetrics) {
+        resultMetrics.innerHTML = `
+          ${result.delayMs !== null ? `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[11px] font-mono">RTT: ${result.delayMs}ms</span>` : ''}
+          <span class="text-slate-400 text-[11px]">Destino: ${result.ip}:${result.port}</span>
+        `;
+      }
+      if (guide) guide.classList.add('hidden');
+      showToast(`Porta ${result.port} está ABERTA!`, 'success');
+    } else {
+      // Porta Fechada / Filtrada / Timeout
+      playBeep(330, 0.1);
+      if (statusBadge) {
+        statusBadge.className = 'badge-clean badge-rose text-[10px]';
+        statusBadge.textContent = result.status === 'timeout' ? 'Filtrada / Timeout' : 'Fechada';
+      }
+      if (resultCard) {
+        resultCard.className = 'rounded-lg p-4 border transition-all bg-rose-950/20 border-rose-500/30';
+      }
+      if (iconContainer) {
+        iconContainer.innerHTML = '<i data-lucide="x-circle" class="w-5 h-5 text-rose-400"></i>';
+      }
+      if (resultTitle) {
+        resultTitle.textContent = `Porta ${result.port} está FECHADA ou INACESSÍVEL`;
+        resultTitle.className = 'text-sm font-semibold text-rose-300';
+      }
+      if (resultMsg) {
+        resultMsg.textContent = result.status === 'timeout'
+          ? `Tempo limite esgotado. Pacotes descartados (DROP) por firewall ou rota inexistente.`
+          : `A conexão TCP foi recusada (RST). Nenhum serviço está escutando na porta ${result.port} no host ${result.ip} ou o encaminhamento de porta no roteador não foi concluído.`;
+      }
+      if (resultMetrics) {
+        resultMetrics.innerHTML = `
+          <span class="text-slate-400 text-[11px]">Destino: ${result.ip}:${result.port}</span>
+        `;
+      }
+      if (guide) guide.classList.remove('hidden');
+      showToast(`Porta ${result.port} está inacessível.`, 'warning');
+    }
+  } catch (error) {
+    console.error('Erro no teste de portas:', error);
+    if (statusBadge) {
+      statusBadge.className = 'badge-clean badge-amber text-[10px]';
+      statusBadge.textContent = 'Erro';
+    }
+    if (resultCard) {
+      resultCard.className = 'rounded-lg p-4 border transition-all bg-amber-950/20 border-amber-500/30';
+    }
+    if (iconContainer) {
+      iconContainer.innerHTML = '<i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i>';
+    }
+    if (resultTitle) {
+      resultTitle.textContent = 'Falha na sondagem da porta';
+      resultTitle.className = 'text-sm font-semibold text-amber-300';
+    }
+    if (resultMsg) {
+      resultMsg.textContent = 'Não foi possível consultar a sonda remota de testes. Verifique sua conexão com a internet.';
+    }
+    if (guide) guide.classList.add('hidden');
+    showToast('Falha na sondagem da porta.', 'error');
+  } finally {
+    state.isTestingPort = false;
+    if (btnRun) {
+      btnRun.disabled = false;
+      btnRun.innerHTML = `
+        <i data-lucide="play" class="w-3.5 h-3.5"></i>
+        <span>Verificar Porta</span>
+      `;
+    }
+    initIcons();
+  }
+}
+
 
 // ============================================================================
 // SISTEMA DE TOAST NOTIFICATIONS (MINIMALISTA)

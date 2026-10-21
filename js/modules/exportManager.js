@@ -16,6 +16,7 @@ export function generatePlainTextReport(state) {
   const ua = state.ua || {};
   const gpu = state.gpu || {};
   const webrtc = state.webrtc || {};
+  const portTest = state.portTest || null;
 
   return `================================================================================
           NETWORK DIAGNOSTICS & IP INSPECTOR — RELATÓRIO TÉCNICO
@@ -76,7 +77,14 @@ WebRTC IP Leak:    ${webrtc.status || 'N/A'}
 ${webrtc.leakedIps?.length ? `IPs Revelados:     ${webrtc.leakedIps.join(', ')}\n` : ''}
 User-Agent Completo:
 ${ua.rawUserAgent || navigator.userAgent}
-
+${portTest ? `
+[5] TESTE DE PORTAS TCP (PORT FORWARDING)
+--------------------------------------------------------------------------------
+Alvo Sondado:      ${portTest.ip}:${portTest.port}
+Status da Porta:   ${portTest.status === 'open' ? 'ABERTA (OPEN)' : 'FECHADA / FILTRADA'}
+Latência TCP:      ${portTest.delayMs !== null ? `${portTest.delayMs} ms` : 'N/A'}
+Mensagem:          ${portTest.message}
+` : ''}
 ================================================================================
 Gerado por Network Diagnostics & IP Inspector — 100% Client-Side
 ================================================================================`;
@@ -95,6 +103,7 @@ export function generateMarkdownReport(state) {
   const ua = state.ua || {};
   const gpu = state.gpu || {};
   const webrtc = state.webrtc || {};
+  const portTest = state.portTest || null;
 
   return `### 🌐 Relatório de Diagnóstico de Rede — Network Diagnostics & IP Inspector
 *Gerado em:* \`${dateStr}\` | *Origem:* \`${window.location.origin}\`
@@ -129,7 +138,13 @@ export function generateMarkdownReport(state) {
 - **Display:** \`${display.screenResolution}\` (DPR: \`${display.devicePixelRatio}\`, \`${display.colorDepth}\`)
 - **GPU:** \`${gpu.renderer || 'N/A'}\` (${gpu.vendor || 'N/A'})
 - **WebRTC Status:** ${webrtc.status || 'N/A'}
-
+${portTest ? `
+#### 🚪 5. Teste de Portas & Port Forwarding
+- **Destino:** \`${portTest.ip}:${portTest.port}\`
+- **Status:** **${portTest.status === 'open' ? '🟢 ABERTA (OPEN)' : '🔴 FECHADA / FILTRADA'}**
+- **Latência TCP:** ${portTest.delayMs !== null ? `\`${portTest.delayMs} ms\`` : 'N/A'}
+- **Detalhes:** ${portTest.message}
+` : ''}
 ---
 *Gerado via [Network Diagnostics & IP Inspector](https://myip.zjonathas.com.br)*`;
 }

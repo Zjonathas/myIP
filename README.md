@@ -11,6 +11,7 @@ A modern, lightweight, 100% client-side web tool for real-time network diagnosti
 - **IP Detection:** Automatic lookup for public IPv4 and IPv6 addresses.
 - **Routing & ISP:** Instant lookup of ASN, ISP/operator name, and approximate geographic location.
 - **Protocol & TLS:** Detection of active HTTP protocol versions (HTTP/2, HTTP/3) and TLS cipher suites.
+- **Port Forwarding & Port Tester:** Sonda externa TCP para verificar se portas (Web, SSH, RDP, Minecraft, CFTV) estão ABERTAS ou FECHADAS para a internet.
 - **Connection Metrics:** Estimated latency (RTT), jitter, and link information via the `Network Information API`.
 - **Client Diagnostics:** Formatted User-Agent, system architecture, display resolution, and WebGL hardware renderer details.
 - **Quick Export:** One-click copy button to export clean diagnostic summaries for IT support tickets.

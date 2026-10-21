@@ -246,6 +246,12 @@ html.dark .badge-zinc {
   border-color: rgba(100, 116, 139, 0.2);
 }
 
+.badge-rose {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
 /* ── Pulse Calm (Status Online) ─────────────────────────────────────────── */
 .pulse-calm {
   position: relative;
